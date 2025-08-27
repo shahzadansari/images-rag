@@ -205,3 +205,47 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Next.js specific files 
+# ignore Next.js build output
+.next/
+# ignore Next.js cache
+.next/cache
+# ignore Next.js server logs
+.next/server/
+# ignore Next.js test reports
+.next/test-reports/
+# ignore node modules in rag-ui directory
+rag-ui/node_modules/
+# ignore Next.js environment variables
+rag-ui/.env.local
+rag-ui/.env
+# ignore Next.js and Vercel build output
+rag-ui/.next
+rag-ui/out
+rag-ui/dist
+rag-ui/build
+# ignore Next.js debug files
+rag-ui/npm-debug.log*
+rag-ui/yarn-debug.log*
+rag-ui/yarn-error.log*
+rag-ui/.DS_Store
+# ignore Next.js test reports
+rag-ui/coverage
+rag-ui/cypress/videos/
+rag-ui/cypress/screenshots/
+rag-ui/.next/
+rag-ui/node_modules/
+# The following is a common practice to prevent conflicts if Next.js is using
+# its own local dev server and you're not using Vercel.
+# rag-ui/.next/standalone/
+# rag-ui/.next/static/
+# rag-ui/out/
+
+# Add a rule to ignore all node_modules directories
+node_modules/
+
+# Add a rule to ignore the rag-images-demo specific build outputs
+rag-images-demo/dist/
+rag-images-demo/build/
+rag-images-demo/venv/
