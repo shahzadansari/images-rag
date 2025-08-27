@@ -107,25 +107,45 @@ for page_num, page in enumerate(doc, start=1):
     if not text_blocks and not image_blocks:
         continue
 
-    # Save images and prepare their metadata
+    # Save images and prepare their metadata (robustly locate image rects)
     saved_images: List[Dict[str, Any]] = []
-    for idx, ib in enumerate(image_blocks, start=1):
-        xref = ib.get("xref")
-        if not xref:
-            continue
+    next_img_idx = 1
+    try:
+        page_images = page.get_images(full=True)
+    except Exception:
+        page_images = []
+    for img in page_images:
+        xref = img[0]
+        try:
+            rects = page.get_image_rects(xref)
+        except Exception:
+            rects = []
+        if not rects:
+            # Fallback to any bbox from layout image blocks with same xref
+            fallback_bbox = None
+            for ib in image_blocks:
+                if ib.get("xref") == xref:
+                    fallback_bbox = tuple(ib.get("bbox", (0, 0, 0, 0)))
+                    break
+            if fallback_bbox is None:
+                continue
+            rects = [fitz.Rect(*fallback_bbox)]
+
+        rect = rects[0]
         try:
             pix = fitz.Pixmap(doc, int(xref))
         except Exception:
             continue
-        image_path = images_folder / f"page{page_num}_img{idx}.png"
+        image_path = images_folder / f"page{page_num}_img{next_img_idx}.png"
         pix.save(str(image_path))
-        rel_path = f"images/page{page_num}_img{idx}.png"
+        rel_path = f"images/page{page_num}_img{next_img_idx}.png"
         saved_images.append(
             {
-                "bbox": tuple(ib["bbox"]),
+                "bbox": (rect.x0, rect.y0, rect.x1, rect.y1),
                 "path": rel_path,
             }
         )
+        next_img_idx += 1
 
     # Associate images to their nearest/overlapping text blocks
     # Strategy: if an image intersects an expanded text bbox, attach it. Otherwise, attach the nearest vertically adjacent text block.
