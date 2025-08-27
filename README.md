@@ -2,7 +2,7 @@
 
 This PoC retrieves relevant text and only the relevant images from a PDF. It uses a Python backend for indexing and querying with ChromaDB and a simple Next.js UI for asking questions.
 
-### What it does
+### What It Does
 - **Indexes PDF into layout-aware chunks**: Extracts text blocks from each page and associates nearby/overlapping images using PDF bounding boxes.
 - **Stores embeddings + metadata**: Text block embeddings are stored in ChromaDB with metadata: `page`, `bbox`, and a per-block list of `images`.
 - **Serves images statically**: Saved PNGs are available at `/images/...` for the UI to render.
@@ -20,6 +20,56 @@ flowchart TD
   F --> E
   G[Static images] --- E
 ```
+
+### How Does This Work
+Normally, when you do semantic search on PDFs, you only embed plain text. The database doesn’t know where that text came from (page? position?) or if there were images nearby. In this POC, Every chunk of text is stored with metadata → page number, bounding box (position), and any attached images.
+
+That means later when you search for something (e.g. "What is Next.js?"), the system won’t just return text, it can also:
+- Tell you which page and where on the page that text was found.
+- Show you any images that were attached to that block.
+
+```json
+{
+    "results": [
+        {
+            "text": "Muhammad  Shahzad",
+            "images": [
+                "images/page1_img1.png"
+            ],
+            "page": 1,
+            "bbox": "454.69921875,209.25,697.7479858398438,235.875",
+            "distance": 70.56944274902344
+        }
+    ]
+}
+```
+
+### Example:
+If a PDF page says, “Next.js is a React framework…” and has the Next.js logo image nearby, a normal embedding search gives you the sentence only. This layout-aware search gives you the sentence plus the logo image path, so you can display both in your UI.
+
+```mermaid
+flowchart TD
+    %% --- Ingestion Phase ---
+    A[PDF File] --> B[Extract Layout: text blocks and image blocks]
+    B --> C1[Build Text Blocks]
+    B --> C2[Extract Images and save to folder]
+    
+    C1 --> D[Link Images to Nearest Text Blocks]
+    C2 --> D
+
+    D --> E[Generate Embeddings using Ollama API]
+    E --> F[Store in Chroma DB with text and metadata]
+
+    %% --- Retrieval Phase ---
+    Q[User Query] --> R[Convert Query to Embedding using Ollama API]
+    R --> S[Search Chroma DB for similar embeddings]
+    S --> T[Retrieve Matching Text Chunks with metadata]
+    T --> U[Display Results with Text and Associated Images]
+
+
+```
+
+---
 
 ### Repository layout
 - `rag-images-demo/`: Python index/query API (FastAPI), ChromaDB persistent store, image output.
