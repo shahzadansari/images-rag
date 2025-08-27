@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Use script-relative paths
 script_dir = Path(__file__).resolve().parent
-pdf_path = script_dir / "sample3.pdf"  # make sure sample is here
+pdf_path = script_dir / "sample5.pdf"  # make sure sample is here
 doc = fitz.open(str(pdf_path))
 
 images_dir = script_dir / "images"

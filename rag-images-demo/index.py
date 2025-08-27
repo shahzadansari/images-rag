@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Tuple
 # --- Setup ---
 # Resolve paths relative to this script's directory so execution works from any CWD
 script_dir = Path(__file__).resolve().parent
-pdf_path = script_dir / "sample3.pdf"
+pdf_path = script_dir / "sample5.pdf"
 images_folder = script_dir / "images"
 os.makedirs(images_folder, exist_ok=True)
 
