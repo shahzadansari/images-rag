@@ -11,14 +11,14 @@ This PoC retrieves relevant text and only the relevant images from a PDF. It use
 ### High-level flow
 ```mermaid
 flowchart TD
-  A[PDF file] --> B[Indexer (PyMuPDF)]
-  B -->|extract text blocks + image rects| C[Associate images to nearest/overlapping text blocks]
-  C -->|embed text via Ollama| D[ChromaDB Collection]
-  E[UI (Next.js)] --> F[/query endpoint (FastAPI)]
-  F -->|embed query via Ollama| D
-  D -->|top-k results: text + per-block images| F
+  A[PDF] --> B[Indexer]
+  B -->|extract blocks| C[Associate images]
+  C -->|embed text| D[ChromaDB]
+  E[UI] --> F[Query API]
+  F -->|embed query| D
+  D -->|top-k results| F
   F --> E
-  G[Static /images/*] --- E
+  G[Static images] --- E
 ```
 
 ### Repository layout
