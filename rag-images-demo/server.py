@@ -1,12 +1,14 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import chromadb
-import requests # Import requests for the Ollama call
+import requests  # Import requests for the Ollama call
+from pathlib import Path
 
 app = FastAPI()
 
+
 # --- Embedding function (Ollama) ---
-def get_embedding(text: str):
+def get_embedding(input_text: str):
     """
     Function to get embeddings from the Ollama service.
     This must match the function used in index.py for consistency.
@@ -16,18 +18,23 @@ def get_embedding(text: str):
             "http://localhost:11434/api/embeddings",
             json={
                 "model": "nomic-embed-text",  # make sure this model is pulled in Ollama
-                "prompt": text
-            }
+                "prompt": input_text,
+            },
         )
         res.raise_for_status()
         data = res.json()
         return data.get("embedding")
-    except Exception as e:
-        print(f"⚠️ Embedding failed for text: {text[:50]}... Error: {e}")
+    except requests.RequestException as e:
+        print(f"⚠️ Embedding HTTP error for text: {input_text[:50]}... Error: {e}")
+        return None
+    except (ValueError, KeyError) as e:
+        print(f"⚠️ Embedding parse error for text: {input_text[:50]}... Error: {e}")
         return None
 
+
 # Use PersistentClient everywhere for consistency
-client = chromadb.PersistentClient(path="./chroma_db")
+script_dir = Path(__file__).resolve().parent
+client = chromadb.PersistentClient(path=str(script_dir / "chroma_db"))
 
 try:
     # We remove the embedding_function parameter here.
@@ -37,8 +44,10 @@ except Exception:
     # Same here, no embedding_function is needed.
     collection = client.get_or_create_collection("pdf_chunks")
 
+
 class QueryRequest(BaseModel):
     query: str
+
 
 @app.post("/query")
 def query_pdf(req: QueryRequest):
@@ -47,34 +56,40 @@ def query_pdf(req: QueryRequest):
 
     # First, get the embedding for the user's query using the same Ollama function
     query_embedding = get_embedding(req.query)
-    
+
     if query_embedding is None:
         return {"error": "Failed to get embedding for query."}, 500
 
     # Now, query the collection using the embedding vector directly.
     # This ensures the dimension is correct.
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=1
-    )
+    results = collection.query(query_embeddings=[query_embedding], n_results=1)
 
     print("\n--- Chroma Results ---")
     print(results)
 
     return {
-    "results": [
-    {
-        "text": results["documents"][0][i],
-        "images": (
-            [img.strip() for img in results["metadatas"][0][i].get("images", "").split(",")]
-            if results["metadatas"][0][i].get("images")
-            else []
-        )
+        "results": [
+            {
+                "text": results["documents"][0][i],
+                "images": (
+                    [
+                        # normalize absolute paths back to app-relative if needed
+                        (
+                            img.strip().split("rag-images-demo/")[-1]
+                            if img.startswith("/")
+                            else img.strip()
+                        )
+                        for img in results["metadatas"][0][i]
+                        .get("images", "")
+                        .split(",")
+                    ]
+                    if results["metadatas"][0][i].get("images")
+                    else []
+                ),
+            }
+            for i in range(len(results["documents"][0]))
+        ]
     }
-    for i in range(len(results["documents"][0]))
-]
-
-}
 
 
 @app.get("/debug")
@@ -82,7 +97,4 @@ def debug():
     count = collection.count()
     peek = collection.peek()
     print(f"\n--- Debug ---\nCount: {count}\nSample: {peek}")
-    return {
-        "count": count,
-        "sample": peek
-    }
+    return {"count": count, "sample": peek}

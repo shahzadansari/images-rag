@@ -1,10 +1,14 @@
 import fitz  # PyMuPDF
 import os
+from pathlib import Path
 
-pdf_path = "sample3.pdf"   # make sure sample.pdf is in the same folder
-doc = fitz.open(pdf_path)
+# Use script-relative paths
+script_dir = Path(__file__).resolve().parent
+pdf_path = script_dir / "sample3.pdf"  # make sure sample is here
+doc = fitz.open(str(pdf_path))
 
-os.makedirs("images", exist_ok=True)
+images_dir = script_dir / "images"
+os.makedirs(images_dir, exist_ok=True)
 
 for page_num, page in enumerate(doc, start=1):
     # Print some text
@@ -16,6 +20,6 @@ for page_num, page in enumerate(doc, start=1):
     for img_index, img in enumerate(page.get_images(full=True), start=1):
         xref = img[0]
         pix = fitz.Pixmap(doc, xref)
-        image_path = f"images/page{page_num}_img{img_index}.png"
-        pix.save(image_path)
+        image_path = images_dir / f"page{page_num}_img{img_index}.png"
+        pix.save(str(image_path))
         print(f"Saved image: {image_path}")

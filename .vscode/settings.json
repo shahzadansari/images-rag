@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "/Users/shahzad/Storage/ApplicationDevelopment/Python/images-rag/.venv/bin/python",
+  "python.venvPath": "/Users/shahzad/Storage/ApplicationDevelopment/Python/images-rag/.venv",
+  "python.analysis.extraPaths": [
+    "/Users/shahzad/Storage/ApplicationDevelopment/Python/images-rag/.venv/lib/python3.11/site-packages"
+  ]
+}
